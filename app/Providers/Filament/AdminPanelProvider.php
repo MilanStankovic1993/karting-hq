@@ -18,6 +18,7 @@ use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
+use Jeffgreco13\FilamentBreezy\BreezyCore;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -54,6 +55,13 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->plugins([
                 FilamentShieldPlugin::make(),
+                BreezyCore::make()
+                    ->myProfile(
+                        shouldRegisterUserMenu: true,   // link u user meniju (gore desno)
+                        userMenuLabel: 'My Profile',    // labela
+                        shouldRegisterNavigation: false,// da NE pravi item u levom meniju
+                        hasAvatars: true,              // za sada bez upload avatara
+                    ),
             ])
             ->authMiddleware([
                 Authenticate::class,
