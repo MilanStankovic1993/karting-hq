@@ -15,7 +15,6 @@ class CreateSetupSheet extends CreateRecord
     {
         parent::mount();
 
-        // Ako nema user-a iz nekog razloga (ne bi trebalo u Filamentu, ali da smo mirni)
         $user = auth()->user();
         if (! $user) {
             return;
@@ -24,7 +23,7 @@ class CreateSetupSheet extends CreateRecord
         // Poslednja shema koju je kreirao OVAJ korisnik
         $lastSheet = SetupSheet::query()
             ->where('created_by_id', $user->id)
-            ->latest('id') // ili 'created_at'
+            ->latest('id')
             ->first();
 
         if (! $lastSheet) {
@@ -81,31 +80,7 @@ class CreateSetupSheet extends CreateRecord
     }
 
     /**
-     * Upisujemo created_by_id + team_id pri kreiranju.
-     */
-    protected function mutateFormDataBeforeCreate(array $data): array
-    {
-        $user = auth()->user();
-
-        if (! $user) {
-            return $data;
-        }
-
-        // Tim korisnika – za tehnicare/worker-e obavezno postoji
-        if ($user->team_id) {
-            $data['team_id'] = $user->team_id;
-        }
-
-        // Ko je kreirao sheet
-        $data['created_by_id'] = $user->id;
-
-        return $data;
-    }
-
-    /**
      * Za "Create & create another" – šta ostaje u formi posle kreiranja.
-     * (kod tebe je labela "Create & create a blank form", ali ponašanje
-     * je i dalje default; ako želiš full prazno, možemo i ovde da null-ujemo sve).
      */
     protected function preserveFormDataWhenCreatingAnother(array $data): array
     {

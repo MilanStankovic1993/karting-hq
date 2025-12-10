@@ -11,6 +11,17 @@ return new class extends Migration
         Schema::create('drivers', function (Blueprint $table) {
             $table->id();
 
+            // KO JE KREIRAO / IZMENIO
+            $table->foreignId('created_by_id')
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
+
+            $table->foreignId('updated_by_id')
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
+
             // TENANT TEAM
             $table->foreignId('team_id')
                 ->nullable()
@@ -26,6 +37,7 @@ return new class extends Migration
             $table->unsignedInteger('kart_number')->nullable();
             $table->boolean('active')->default(true);
             $table->text('notes')->nullable();
+
             $table->timestamps();
         });
     }

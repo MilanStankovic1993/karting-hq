@@ -58,28 +58,57 @@ class DriverResource extends Resource
     {
         return $table
             ->columns([
+                // === Default vidljive kolone ===
                 Tables\Columns\TextColumn::make('name')
                     ->label('Name')
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(),
 
                 Tables\Columns\TextColumn::make('short_name')
-                    ->label('Short'),
+                    ->label('Short')
+                    ->toggleable(),
 
                 Tables\Columns\TextColumn::make('team')
                     ->label('Karting team')
-                    ->searchable(),
+                    ->searchable()
+                    ->toggleable(),
 
                 Tables\Columns\TextColumn::make('kart_number')
-                    ->label('Kart #'),
+                    ->label('Kart #')
+                    ->toggleable(),
 
                 Tables\Columns\IconColumn::make('active')
                     ->boolean()
-                    ->label('Active'),
+                    ->label('Active')
+                    ->toggleable(),
+
+                // === Meta / audit polja – sakrivena po difoltu, mogu da se uključe ===
+                Tables\Columns\TextColumn::make('createdBy.name')
+                    ->label('Created by')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                Tables\Columns\TextColumn::make('updatedBy.name')
+                    ->label('Updated by')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                Tables\Columns\TextColumn::make('created_at')
+                    ->label('Created at')
+                    ->dateTime()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                Tables\Columns\TextColumn::make('updated_at')
+                    ->label('Updated at')
+                    ->dateTime()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->defaultSort('name')
             ->filters([
-                //
+                // ovde možemo posle da dodamo filtere (npr. active)
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),

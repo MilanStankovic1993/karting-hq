@@ -11,6 +11,17 @@ return new class extends Migration
         Schema::create('races', function (Blueprint $table) {
             $table->id();
 
+            // KO JE KREIRAO / IZMENIO
+            $table->foreignId('created_by_id')
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
+
+            $table->foreignId('updated_by_id')
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
+
             // TENANT TEAM
             $table->foreignId('team_id')
                 ->nullable()
@@ -21,6 +32,7 @@ return new class extends Migration
             $table->string('track')->nullable();
             $table->date('date')->nullable();
             $table->text('notes')->nullable();
+
             $table->timestamps();
         });
     }

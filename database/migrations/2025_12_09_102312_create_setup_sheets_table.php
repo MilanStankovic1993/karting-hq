@@ -11,6 +11,17 @@ return new class extends Migration
         Schema::create('setup_sheets', function (Blueprint $table) {
             $table->id();
 
+            // KO JE KREIRAO / IZMENIO
+            $table->foreignId('created_by_id')
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
+
+            $table->foreignId('updated_by_id')
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
+
             // TENANT TEAM
             $table->foreignId('team_id')
                 ->nullable()

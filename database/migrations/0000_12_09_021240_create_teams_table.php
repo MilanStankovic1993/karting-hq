@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('teams', function (Blueprint $table) {
             $table->id();
-            $table->string('name');              // npr. "Team Milan"
+            $table->string('name');
             $table->text('notes')->nullable();
             $table->timestamps();
         });

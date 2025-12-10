@@ -46,22 +46,55 @@ class RaceResource extends Resource
     {
         return $table
             ->columns([
+                // === Default vidljive kolone ===
                 Tables\Columns\TextColumn::make('name')
                     ->label('Name')
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(),
 
                 Tables\Columns\TextColumn::make('track')
                     ->label('Track')
-                    ->searchable(),
+                    ->searchable()
+                    ->toggleable(),
 
                 Tables\Columns\TextColumn::make('date')
                     ->date()
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(),
+
+                // Notes kao opciona kolona (skrivena po difoltu)
+                Tables\Columns\TextColumn::make('notes')
+                    ->label('Notes')
+                    ->limit(40)
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                // === Meta / audit polja – sakrivena po difoltu ===
+                Tables\Columns\TextColumn::make('createdBy.name')
+                    ->label('Created by')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                Tables\Columns\TextColumn::make('updatedBy.name')
+                    ->label('Updated by')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                Tables\Columns\TextColumn::make('created_at')
+                    ->label('Created at')
+                    ->dateTime()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                Tables\Columns\TextColumn::make('updated_at')
+                    ->label('Updated at')
+                    ->dateTime()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->defaultSort('date', 'desc')
             ->filters([
-                //
+                // ovde možemo kasnije dodati filtere (po datumu, stazi itd.)
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),

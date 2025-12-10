@@ -105,6 +105,7 @@ class SetupSheetResource extends Resource
                                     ->maxLength(255)
                                     ->nullable(),
                             ]),
+
                         Forms\Components\Placeholder::make('created_by')
                             ->label('Created by')
                             ->content(fn (?SetupSheet $record) =>
@@ -181,26 +182,78 @@ class SetupSheetResource extends Resource
     {
         return $table
             ->columns([
+                // === Default vidljive kolone ===
                 Tables\Columns\TextColumn::make('date')
                     ->date()
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(),
 
                 Tables\Columns\TextColumn::make('race.name')
                     ->label('Race / Event')
-                    ->searchable(),
+                    ->searchable()
+                    ->toggleable(),
 
                 Tables\Columns\TextColumn::make('driver.name')
                     ->label('Driver')
-                    ->searchable(),
+                    ->searchable()
+                    ->toggleable(),
 
                 Tables\Columns\TextColumn::make('time_label')
-                    ->label('Time / Test'),
+                    ->label('Time / Test')
+                    ->toggleable(),
 
                 Tables\Columns\TextColumn::make('fastest_lap')
-                    ->label('Fastest lap'),
+                    ->label('Fastest lap')
+                    ->toggleable(),
 
                 Tables\Columns\TextColumn::make('temperature')
-                    ->label('Temp'),
+                    ->label('Temp')
+                    ->toggleable(),
+
+                // === Setup detalji – sakriveni po difoltu, mogu da se upale po potrebi ===
+                Tables\Columns\TextColumn::make('chassis')
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                Tables\Columns\TextColumn::make('engine')
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                Tables\Columns\TextColumn::make('sprocket')
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                Tables\Columns\TextColumn::make('tyres_type')
+                    ->label('Tyres')
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                Tables\Columns\TextColumn::make('front_entry')
+                    ->label('Front entry')
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                Tables\Columns\TextColumn::make('rear_entry')
+                    ->label('Rear entry')
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                // === Meta / audit polja – sakrivena po difoltu ===
+                Tables\Columns\TextColumn::make('createdBy.name')
+                    ->label('Created by')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                Tables\Columns\TextColumn::make('updatedBy.name')
+                    ->label('Updated by')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                Tables\Columns\TextColumn::make('created_at')
+                    ->label('Created at')
+                    ->dateTime()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                Tables\Columns\TextColumn::make('updated_at')
+                    ->label('Updated at')
+                    ->dateTime()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->defaultSort('date', 'desc')
             ->filters([

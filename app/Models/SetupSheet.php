@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Auth;
 
 class SetupSheet extends Model
 {
@@ -14,6 +15,7 @@ class SetupSheet extends Model
         'race_id',
         'driver_id',
         'created_by_id',
+        'updated_by_id',
         'date',
         'time_label',
         'chassis',
@@ -42,6 +44,10 @@ class SetupSheet extends Model
         'comments',
     ];
 
+    /* -----------------------------------
+     |  RELATIONS
+     |----------------------------------- */
+
     public function race()
     {
         return $this->belongsTo(Race::class);
@@ -52,13 +58,38 @@ class SetupSheet extends Model
         return $this->belongsTo(Driver::class);
     }
 
+    public function team()
+    {
+        return $this->belongsTo(Team::class);
+    }
+
     public function createdBy()
     {
         return $this->belongsTo(User::class, 'created_by_id');
     }
 
-    public function team()
+    public function updatedBy()
     {
-        return $this->belongsTo(Team::class);
+        return $this->belongsTo(User::class, 'updated_by_id');
+    }
+
+    /* -----------------------------------
+     |  AUTO-FILL created_by / updated_by
+     |----------------------------------- */
+    protected static function booted(): void
+    {
+        static::creating(function (SetupSheet $sheet) {
+            if (Auth::check()) {
+                $sheet->created_by_id ??= Auth::id();
+                $sheet->updated_by_id ??= Auth::id();
+                $sheet->team_id ??= Auth::user()?->team_id;
+            }
+        });
+
+        static::updating(function (SetupSheet $sheet) {
+            if (Auth::check()) {
+                $sheet->updated_by_id = Auth::id();
+            }
+        });
     }
 }
