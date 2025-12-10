@@ -41,7 +41,7 @@ class TeamResource extends Resource
                     ->schema([
                         Forms\Components\Toggle::make('is_active')
                             ->label('Subscription active')
-                            ->helperText('If disabled, this team and all its users lose access.')
+                            ->helperText('If disabled, this team and all its users lose access. (Super-admin only)')
                             ->default(true)
                             ->hidden(fn () => ! auth()->user()?->isSuperAdmin()),
 
@@ -92,6 +92,14 @@ class TeamResource extends Resource
                     ->dateTime()
                     ->sortable(),
 
+                // Remaining days (informational badge-like text)
+                Tables\Columns\TextColumn::make('remaining_days')
+                    ->label('Days left')
+                    ->getStateUsing(fn (Team $record) => $record->subscription_expires_at ? ($record->remaining_days ?? $record->getRemainingDaysAttribute()) : null)
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true)
+                    ->description(fn (Team $record) => $record->subscription_expires_at ? ($record->isExpired() ? 'Expired' : ($record->getRemainingDaysAttribute() . ' days left')) : 'No subscription'),
+
                 Tables\Columns\TextColumn::make('createdBy.name')
                     ->label('Created by')
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -111,7 +119,12 @@ class TeamResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->defaultSort('name')
-            ->filters([])
+            ->filters([
+                // optionally add filter presets later (e.g., active/inactive)
+                Tables\Filters\Filter::make('active')
+                    ->label('Active')
+                    ->query(fn (Builder $query) => $query->where('is_active', true)),
+            ])
             ->actions([
                 Tables\Actions\EditAction::make(),
             ])
