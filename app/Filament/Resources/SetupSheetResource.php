@@ -12,6 +12,7 @@ use Filament\Tables\Table;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
 
 class SetupSheetResource extends Resource
 {
@@ -32,21 +33,34 @@ class SetupSheetResource extends Resource
                     ->schema([
                         Forms\Components\Select::make('race_id')
                             ->label('Race / Event')
-                            ->relationship('race', 'name')
+                            ->relationship(
+                                name: 'race',
+                                titleAttribute: 'name',
+                                modifyQueryUsing: fn (Builder $query) => $query
+                                    ->when(
+                                        Auth::user()?->team_id,
+                                        fn (Builder $q, $teamId) => $q->where('team_id', $teamId),
+                                    )
+                            )
                             ->searchable()
                             ->preload()
                             ->nullable()
-                            // + dugme za brzo kreiranje trke
                             ->createOptionForm([
+                                Forms\Components\Hidden::make('team_id')
+                                    ->default(fn () => Auth::user()?->team_id),
+
                                 Forms\Components\TextInput::make('name')
                                     ->label('Name')
                                     ->required()
                                     ->maxLength(255),
+
                                 Forms\Components\TextInput::make('track')
                                     ->label('Track')
                                     ->maxLength(255),
+
                                 Forms\Components\DatePicker::make('date')
                                     ->label('Date'),
+
                                 Forms\Components\Textarea::make('notes')
                                     ->label('Notes')
                                     ->rows(2),
@@ -54,39 +68,51 @@ class SetupSheetResource extends Resource
 
                         Forms\Components\Select::make('driver_id')
                             ->label('Driver')
-                            ->relationship('driver', 'name')
+                            ->relationship(
+                                name: 'driver',
+                                titleAttribute: 'name',
+                                modifyQueryUsing: fn (Builder $query) => $query
+                                    ->when(
+                                        Auth::user()?->team_id,
+                                        fn (Builder $q, $teamId) => $q->where('team_id', $teamId),
+                                    )
+                            )
                             ->searchable()
                             ->preload()
                             ->nullable()
-                            // + dugme za brz unos vozača
                             ->createOptionForm([
+                                Forms\Components\Hidden::make('team_id')
+                                    ->default(fn () => Auth::user()?->team_id),
+
                                 Forms\Components\TextInput::make('name')
                                     ->label('Name')
                                     ->required()
                                     ->maxLength(255),
+
                                 Forms\Components\TextInput::make('short_name')
                                     ->label('Short name')
                                     ->maxLength(50),
+
                                 Forms\Components\TextInput::make('kart_number')
                                     ->label('Kart #')
                                     ->numeric()
                                     ->minValue(0)
                                     ->maxValue(999)
                                     ->nullable(),
+
                                 Forms\Components\TextInput::make('team')
                                     ->label('Team')
                                     ->maxLength(255)
                                     ->nullable(),
                             ]),
-
                         Forms\Components\Placeholder::make('created_by')
                             ->label('Created by')
                             ->content(fn (?SetupSheet $record) =>
-                                $record?->createdBy?->name ?? auth()->user()->name
+                                $record?->createdBy?->name ?? auth()->user()?->name
                             ),
                     ]),
 
-                // 🧾 Osnovne informacije (bez duplog driver/track)
+                // 🧾 Osnovne informacije
                 Forms\Components\Section::make('Basic info')
                     ->columns(2)
                     ->schema([
@@ -178,17 +204,14 @@ class SetupSheetResource extends Resource
             ])
             ->defaultSort('date', 'desc')
             ->filters([
-                // filter po trci
                 SelectFilter::make('race_id')
                     ->label('Race')
                     ->relationship('race', 'name'),
 
-                // filter po vozaču
                 SelectFilter::make('driver_id')
                     ->label('Driver')
                     ->relationship('driver', 'name'),
 
-                // filter po opsegu datuma
                 Filter::make('date_range')
                     ->label('Date range')
                     ->form([
@@ -217,9 +240,29 @@ class SetupSheetResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListSetupSheets::route('/'),
+            'index'  => Pages\ListSetupSheets::route('/'),
             'create' => Pages\CreateSetupSheet::route('/create'),
-            'edit' => Pages\EditSetupSheet::route('/{record}/edit'),
+            'edit'   => Pages\EditSetupSheet::route('/{record}/edit'),
         ];
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        $query = parent::getEloquentQuery();
+
+        $user = auth()->user();
+
+        // Ako nema user-a iz nekog razloga – ne vraćamo ništa
+        if (! $user) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        // Super admin vidi sve
+        if ($user->isSuperAdmin()) {
+            return $query;
+        }
+
+        // Svi ostali vide samo svoj tim
+        return $query->where('team_id', $user->team_id);
     }
 }

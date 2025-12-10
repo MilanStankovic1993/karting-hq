@@ -16,6 +16,9 @@ return new class extends Migration
 
             $table->string('name');
 
+            // APP ROLE – SUPER_ADMIN | TECHNICIAN | WORKER
+            $table->string('role')->default('WORKER');
+
             // LOGIN PREKO USERNAME-A (kasnije ćemo auth prebaciti da koristi ovo)
             $table->string('username')->unique();
 
@@ -25,6 +28,12 @@ return new class extends Migration
             $table->timestamp('email_verified_at')->nullable();
 
             $table->string('password');
+
+            // TENANT TEAM – svi sem super admina će imati team_id
+            $table->foreignId('team_id')
+                ->nullable()
+                ->constrained('teams')
+                ->nullOnDelete();
 
             $table->rememberToken();
             $table->timestamps();

@@ -4,17 +4,16 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\Race;
-use App\Models\Driver;
-use App\Models\User;
 
 class SetupSheet extends Model
 {
     use HasFactory;
 
     protected $fillable = [
-        'driver',
-        'track',
+        'team_id',
+        'race_id',
+        'driver_id',
+        'created_by_id',
         'date',
         'time_label',
         'chassis',
@@ -40,9 +39,6 @@ class SetupSheet extends Model
         'engine_top',
         'temperature',
         'fastest_lap',
-        'driver_id',
-        'race_id',
-        'created_by_id',
         'comments',
     ];
 
@@ -59,5 +55,10 @@ class SetupSheet extends Model
     public function createdBy()
     {
         return $this->belongsTo(User::class, 'created_by_id');
+    }
+
+    public function team()
+    {
+        return $this->belongsTo(Team::class);
     }
 }

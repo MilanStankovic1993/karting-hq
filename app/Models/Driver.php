@@ -10,6 +10,7 @@ class Driver extends Model
     use HasFactory;
 
     protected $fillable = [
+        'team_id',
         'name',
         'short_name',
         'team',
@@ -17,6 +18,11 @@ class Driver extends Model
         'active',
         'notes',
     ];
+
+    public function team()
+    {
+        return $this->belongsTo(Team::class);
+    }
 
     public function setupSheets()
     {

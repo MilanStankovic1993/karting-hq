@@ -10,11 +10,16 @@ class Race extends Model
     use HasFactory;
 
     protected $fillable = [
+        'team_id',
         'name',
         'track',
         'date',
         'notes',
     ];
+    public function team()
+    {
+        return $this->belongsTo(Team::class);
+    }
 
     public function setupSheets()
     {

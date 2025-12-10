@@ -11,9 +11,15 @@ return new class extends Migration
         Schema::create('setup_sheets', function (Blueprint $table) {
             $table->id();
 
+            // TENANT TEAM
+            $table->foreignId('team_id')
+                ->nullable()
+                ->constrained('teams')
+                ->nullOnDelete();
+
             // Header
             $table->date('date')->nullable();
-            $table->string('time_label')->nullable(); // TIME / TEST name
+            $table->string('time_label')->nullable();
 
             // Kart setup fields
             $table->string('chassis')->nullable();

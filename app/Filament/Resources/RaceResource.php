@@ -2,8 +2,8 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\DriverResource\Pages;
-use App\Models\Driver;
+use App\Filament\Resources\RaceResource\Pages;
+use App\Models\Race;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -11,14 +11,14 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 
-class DriverResource extends Resource
+class RaceResource extends Resource
 {
-    protected static ?string $model = Driver::class;
+    protected static ?string $model = Race::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-user';
-    protected static ?string $navigationLabel = 'Drivers';
+    protected static ?string $navigationIcon = 'heroicon-o-flag';
+    protected static ?string $navigationLabel = 'Races';
     protected static ?string $navigationGroup = 'Karting';
-    protected static ?int $navigationSort = 30;
+    protected static ?int $navigationSort = 20;
 
     public static function form(Form $form): Form
     {
@@ -29,24 +29,12 @@ class DriverResource extends Resource
                     ->required()
                     ->maxLength(255),
 
-                Forms\Components\TextInput::make('short_name')
-                    ->label('Short name')
-                    ->maxLength(50),
-
-                Forms\Components\TextInput::make('team')
-                    ->label('Karting team')
+                Forms\Components\TextInput::make('track')
+                    ->label('Track')
                     ->maxLength(255),
 
-                Forms\Components\TextInput::make('kart_number')
-                    ->label('Kart #')
-                    ->numeric()
-                    ->minValue(0)
-                    ->maxValue(999)
-                    ->nullable(),
-
-                Forms\Components\Toggle::make('active')
-                    ->label('Active')
-                    ->default(true),
+                Forms\Components\DatePicker::make('date')
+                    ->label('Date'),
 
                 Forms\Components\Textarea::make('notes')
                     ->label('Notes')
@@ -63,21 +51,15 @@ class DriverResource extends Resource
                     ->searchable()
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('short_name')
-                    ->label('Short'),
-
-                Tables\Columns\TextColumn::make('team')
-                    ->label('Karting team')
+                Tables\Columns\TextColumn::make('track')
+                    ->label('Track')
                     ->searchable(),
 
-                Tables\Columns\TextColumn::make('kart_number')
-                    ->label('Kart #'),
-
-                Tables\Columns\IconColumn::make('active')
-                    ->boolean()
-                    ->label('Active'),
+                Tables\Columns\TextColumn::make('date')
+                    ->date()
+                    ->sortable(),
             ])
-            ->defaultSort('name')
+            ->defaultSort('date', 'desc')
             ->filters([
                 //
             ])
@@ -93,9 +75,9 @@ class DriverResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListDrivers::route('/'),
-            'create' => Pages\CreateDriver::route('/create'),
-            'edit'   => Pages\EditDriver::route('/{record}/edit'),
+            'index'  => Pages\ListRaces::route('/'),
+            'create' => Pages\CreateRace::route('/create'),
+            'edit'   => Pages\EditRace::route('/{record}/edit'),
         ];
     }
 

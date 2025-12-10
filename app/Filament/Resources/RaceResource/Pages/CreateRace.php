@@ -1,13 +1,13 @@
 <?php
 
-namespace App\Filament\Resources\DriverResource\Pages;
+namespace App\Filament\Resources\RaceResource\Pages;
 
-use App\Filament\Resources\DriverResource;
+use App\Filament\Resources\RaceResource;
 use Filament\Resources\Pages\CreateRecord;
 
-class CreateDriver extends CreateRecord
+class CreateRace extends CreateRecord
 {
-    protected static string $resource = DriverResource::class;
+    protected static string $resource = RaceResource::class;
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {

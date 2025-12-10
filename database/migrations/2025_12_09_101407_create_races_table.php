@@ -8,7 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('drivers', function (Blueprint $table) {
+        Schema::create('races', function (Blueprint $table) {
             $table->id();
 
             // TENANT TEAM
@@ -18,13 +18,8 @@ return new class extends Migration
                 ->nullOnDelete();
 
             $table->string('name');
-            $table->string('short_name')->nullable(); // npr. MIL
-
-            // "team" ovde je npr. karting tim (ne tenant)
-            $table->string('team')->nullable();
-
-            $table->unsignedInteger('kart_number')->nullable();
-            $table->boolean('active')->default(true);
+            $table->string('track')->nullable();
+            $table->date('date')->nullable();
             $table->text('notes')->nullable();
             $table->timestamps();
         });
@@ -32,6 +27,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('drivers');
+        Schema::dropIfExists('races');
     }
 };
