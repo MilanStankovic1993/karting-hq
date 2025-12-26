@@ -211,6 +211,30 @@ class Team extends Model
         }
     }
 
+    /**
+     * Aktiviraj tim i (opciono) sve njegove korisnike.
+     *
+     * @param  bool  $activateUsers  Ako true -> postavi users.is_active = true za sve u timu.
+     */
+    public function activateWithUsers(bool $activateUsers = true): void
+    {
+        $this->is_active = true;
+
+        // Po želji: kad se tim aktivira prvi put, setuj start
+        if (! $this->subscription_started_at) {
+            $this->subscription_started_at = now();
+        }
+
+        $this->save();
+
+        if (! $activateUsers) {
+            return;
+        }
+
+        // Vrati korisnike tima na aktivno
+        $this->users()->update(['is_active' => true]);
+    }
+
     /* ============================
      * Useful scopes
      * ============================ */

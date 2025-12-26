@@ -32,7 +32,6 @@ return new class extends Migration
                 ->nullable()
                 ->comment('When the subscription will expire');
 
-            // 📅 Laravel timestamps
             $table->timestamps();
         });
     }

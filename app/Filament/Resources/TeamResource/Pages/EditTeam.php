@@ -29,28 +29,32 @@ class EditTeam extends EditRecord
                 ->form([
                     Forms\Components\Checkbox::make('deactivate_users')
                         ->label('Also deactivate all users in this team')
-                        ->helperText('If checked, will try to set users.is_active = false.'),
+                        ->helperText('If checked, will set users.is_active = false.')
+                        ->visible(fn () => $team->is_active),
+
+                    Forms\Components\Checkbox::make('activate_users')
+                        ->label('Also activate all users in this team')
+                        ->helperText('If checked, will set users.is_active = true.')
+                        ->visible(fn () => ! $team->is_active),
                 ])
                 ->action(function (array $data) use ($team) {
-                    // If currently active -> deactivate (and optionally users)
+                    $team = $team->fresh();
+
                     if ($team->is_active) {
                         $deactivateUsers = (bool) ($data['deactivate_users'] ?? false);
                         $team->deactivateWithUsers($deactivateUsers);
                         return;
                     }
 
-                    // If currently inactive -> activate (simple enable)
-                    $team->is_active = true;
+                    // inactive -> activate
+                    $activateUsers = (bool) ($data['activate_users'] ?? false);
+                    $team->activateWithUsers($activateUsers);
 
-                    // if dates are missing, set a sensible default (optional) — here: do not auto-set unless you want
-                    if (! $team->subscription_started_at) {
-                        $team->subscription_started_at = now();
-                    }
+                    // Optional: expires default (ako želiš)
                     if (! $team->subscription_expires_at) {
                         $team->subscription_expires_at = now()->addDays(30);
+                        $team->save();
                     }
-
-                    $team->save();
                 })
                 ->hidden(fn () => ! auth()->user()?->isSuperAdmin()),
 

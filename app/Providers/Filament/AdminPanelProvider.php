@@ -19,6 +19,7 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Jeffgreco13\FilamentBreezy\BreezyCore;
+use App\Http\Middleware\EnsureUserIsActive;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -29,6 +30,10 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login()
+            ->brandName('Karting HQ')
+            ->brandLogo(asset('logo.png'))
+            ->brandLogoHeight('3rem')
+            ->favicon(asset('favicon.png'))
             ->colors([
                 'primary' => Color::Amber,
             ])
@@ -47,6 +52,7 @@ class AdminPanelProvider extends PanelProvider
                 AddQueuedCookiesToResponse::class,
                 StartSession::class,
                 AuthenticateSession::class,
+                EnsureUserIsActive::class,
                 ShareErrorsFromSession::class,
                 VerifyCsrfToken::class,
                 SubstituteBindings::class,

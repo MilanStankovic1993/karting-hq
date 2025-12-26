@@ -19,7 +19,7 @@ return new class extends Migration
             // APP ROLE – SUPER_ADMIN | TECHNICIAN | WORKER
             $table->string('role')->default('WORKER');
 
-            // LOGIN PREKO USERNAME-A (kasnije ćemo auth prebaciti da koristi ovo)
+            // LOGIN PREKO USERNAME-A
             $table->string('username')->unique();
 
             // Email ostavljamo zbog Filament-a, notifikacija, reset lozinke itd.
@@ -28,6 +28,11 @@ return new class extends Migration
             $table->timestamp('email_verified_at')->nullable();
 
             $table->string('password');
+
+            // ✅ User manual active flag (Team deactivation can flip this)
+            $table->boolean('is_active')
+                ->default(true)
+                ->comment('Manual user disable (e.g. when team is deactivated)');
 
             // TENANT TEAM – svi sem super admina će imati team_id
             $table->foreignId('team_id')
