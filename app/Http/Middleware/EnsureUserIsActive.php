@@ -6,7 +6,6 @@ use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\Response;
-use Illuminate\Support\Facades\Redirect;
 
 class EnsureUserIsActive
 {
@@ -14,30 +13,27 @@ class EnsureUserIsActive
     {
         $user = Auth::user();
 
-        // Ako nije ulogovan - pusti dalje (guest)
+        // Guest
         if (! $user) {
             return $next($request);
         }
 
-        // Super admin uvek može
-        if (method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin()) {
+        // ✅ SUPER ADMIN uvek može (team_id mu je null)
+        if (($user->role ?? null) === \App\Models\User::ROLE_SUPER_ADMIN || ($user->role ?? null) === 'SUPER_ADMIN') {
             return $next($request);
         }
 
         // 1) User mora biti aktivan
-        if (property_exists($user, 'is_active') || isset($user->is_active)) {
-            if (! (bool) $user->is_active) {
-                Auth::logout();
-                $request->session()->invalidate();
-                $request->session()->regenerateToken();
+        if (! (bool) ($user->is_active ?? true)) {
+            Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
 
-            return redirect()->to('/admin/login')
+            return redirect('/admin/login')
                 ->with('error', 'Your account is inactive. Please contact the administrator.');
-            }
         }
 
         // 2) Tim mora postojati i biti aktivan (ako user ima team_id)
-        // (Ako želiš: ovo je pravi "subscription lock")
         if ($user->team_id) {
             $team = $user->team;
 
@@ -46,17 +42,9 @@ class EnsureUserIsActive
                 $request->session()->invalidate();
                 $request->session()->regenerateToken();
 
-            return redirect()->to('/admin/login')
-                ->with('error', 'Your team subscription is inactive. Please contact the administrator.');
+                return redirect('/admin/login')
+                    ->with('error', 'Your team subscription is inactive. Please contact the administrator.');
             }
-
-            // Ako želiš strogo po datumima, odkomentariši:
-            // if (method_exists($team, 'hasAccess') && ! $team->hasAccess()) {
-            //     Auth::logout();
-            //     $request->session()->invalidate();
-            //     $request->session()->regenerateToken();
-            //     abort(403, 'Your team subscription has expired.');
-            // }
         }
 
         return $next($request);
