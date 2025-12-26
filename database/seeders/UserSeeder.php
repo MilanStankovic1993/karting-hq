@@ -11,80 +11,61 @@ class UserSeeder extends Seeder
 {
     public function run(): void
     {
-        /*
-        |--------------------------------------------------------------------------
-        | 1) Kreiramo timove
-        |--------------------------------------------------------------------------
-        */
-
         $teamA = Team::firstOrCreate(['name' => 'Team Alpha']);
         $teamB = Team::firstOrCreate(['name' => 'Team Bravo']);
 
-        /*
-        |--------------------------------------------------------------------------
-        | 2) SUPER ADMIN (nema team_id)
-        |--------------------------------------------------------------------------
-        */
+        $adminEmail = env('SEED_ADMIN_EMAIL', 'admin@karting-hq.com');
+        $adminPass  = env('SEED_ADMIN_PASSWORD', 'ChangeMe123!');
 
-        $milan = User::updateOrCreate(
-            ['username' => 'milan'],
+        // SUPER ADMIN
+        User::updateOrCreate(
+            ['username' => env('SEED_ADMIN_USERNAME', 'milan')],
             [
-                'name'     => 'Milan',
-                'email'    => 'milan@karting-hq.test',
-                'password' => Hash::make('milan123'),
-                'role'     => User::ROLE_SUPER_ADMIN,
-                'team_id'  => null, // SUPER ADMIN nema tim
+                'name'      => env('SEED_ADMIN_NAME', 'Milan'),
+                'email'     => $adminEmail,
+                'password'  => Hash::make($adminPass),
+                'role'      => User::ROLE_SUPER_ADMIN,
+                'team_id'   => null,
+                'is_active' => true, // ✅
             ]
         );
 
-        /*
-        |--------------------------------------------------------------------------
-        | 3) TECHNICIAN za Team Alpha
-        |--------------------------------------------------------------------------
-        */
-
-        $djordje = User::updateOrCreate(
+        // TECHNICIAN Team Alpha
+        User::updateOrCreate(
             ['username' => 'djordje'],
             [
-                'name'     => 'Djordje',
-                'email'    => 'djordje@karting-hq.test',
-                'password' => Hash::make('djordje123'),
-                'role'     => User::ROLE_TECHNICIAN,
-                'team_id'  => $teamA->id,
+                'name'      => 'Djordje',
+                'email'     => 'djordje@karting-hq.com',
+                'password'  => Hash::make('djordje123'),
+                'role'      => User::ROLE_TECHNICIAN,
+                'team_id'   => $teamA->id,
+                'is_active' => true, // ✅
             ]
         );
 
-        /*
-        |--------------------------------------------------------------------------
-        | 4) WORKER u istom timu kao Đorđe (Team Alpha)
-        |--------------------------------------------------------------------------
-        */
-
-        $radnik = User::updateOrCreate(
+        // WORKER Team Alpha
+        User::updateOrCreate(
             ['username' => 'radnik1'],
             [
-                'name'     => 'Radnik 1',
-                'email'    => 'radnik1@karting-hq.test',
-                'password' => Hash::make('radnik123'),
-                'role'     => User::ROLE_WORKER,
-                'team_id'  => $teamA->id,
+                'name'      => 'Radnik 1',
+                'email'     => 'radnik1@karting-hq.com',
+                'password'  => Hash::make('radnik123'),
+                'role'      => User::ROLE_WORKER,
+                'team_id'   => $teamA->id,
+                'is_active' => true, // ✅
             ]
         );
 
-        /*
-        |--------------------------------------------------------------------------
-        | 5) Drugi TECHNICIAN u Team Bravo
-        |--------------------------------------------------------------------------
-        */
-
-        $tech2 = User::updateOrCreate(
+        // TECHNICIAN Team Bravo
+        User::updateOrCreate(
             ['username' => 'tehnicar2'],
             [
-                'name'     => 'Tehnicar 2',
-                'email'    => 'tehnicar2@karting-hq.test',
-                'password' => Hash::make('tehnicar2123'),
-                'role'     => User::ROLE_TECHNICIAN,
-                'team_id'  => $teamB->id,
+                'name'      => 'Tehnicar 2',
+                'email'     => 'tehnicar2@karting-hq.com',
+                'password'  => Hash::make('tehnicar2123'),
+                'role'      => User::ROLE_TECHNICIAN,
+                'team_id'   => $teamB->id,
+                'is_active' => true, // ✅
             ]
         );
     }
