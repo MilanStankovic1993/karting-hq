@@ -28,6 +28,17 @@ return new class extends Migration
                 ->constrained('teams')
                 ->nullOnDelete();
 
+            // VEZE (direktno ovde, kad radimo fresh bazu)
+            $table->foreignId('race_id')
+                ->nullable()
+                ->constrained('races')
+                ->nullOnDelete();
+
+            $table->foreignId('driver_id')
+                ->nullable()
+                ->constrained('drivers')
+                ->nullOnDelete();
+
             // Header
             $table->date('date')->nullable();
             $table->string('time_label')->nullable();
@@ -42,11 +53,25 @@ return new class extends Migration
             $table->string('axle')->nullable();
             $table->string('front_bar')->nullable();
             $table->string('ch_positions')->nullable();
-            $table->string('caster')->nullable();
+
+            // ✅ po zahtevu: camber pa caster (UI rešava redosled, ali kolone su tu)
             $table->string('camber')->nullable();
+            $table->string('caster')->nullable();
+
             $table->string('tyres_type')->nullable();
 
-            // Pressures
+            // ✅ Tyre pressures (cold 2x2 + hot 2x2)
+            $table->decimal('pressure_cold_fl', 5, 2)->nullable();
+            $table->decimal('pressure_cold_fr', 5, 2)->nullable();
+            $table->decimal('pressure_cold_rl', 5, 2)->nullable();
+            $table->decimal('pressure_cold_rr', 5, 2)->nullable();
+
+            $table->decimal('pressure_hot_fl', 5, 2)->nullable();
+            $table->decimal('pressure_hot_fr', 5, 2)->nullable();
+            $table->decimal('pressure_hot_rl', 5, 2)->nullable();
+            $table->decimal('pressure_hot_rr', 5, 2)->nullable();
+
+            // Balance / Handling (slider -3..3) - ostaje string radi kompatibilnosti
             $table->string('front_entry')->nullable();
             $table->string('front_mid')->nullable();
             $table->string('front_exit')->nullable();
@@ -54,13 +79,14 @@ return new class extends Migration
             $table->string('rear_mid')->nullable();
             $table->string('rear_exit')->nullable();
 
-            // Engine needles
+            // Engine needles (slider -3..3) - ostaje string radi kompatibilnosti
             $table->string('engine_low')->nullable();
             $table->string('engine_mid')->nullable();
             $table->string('engine_top')->nullable();
 
             // Results
             $table->string('temperature')->nullable();
+            $table->string('lap_time')->nullable();     // ✅ između temp i fastest lap
             $table->string('fastest_lap')->nullable();
             $table->text('comments')->nullable();
 

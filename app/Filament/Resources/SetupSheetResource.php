@@ -13,6 +13,7 @@ use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\HtmlString;
 
 class SetupSheetResource extends Resource
 {
@@ -23,166 +24,216 @@ class SetupSheetResource extends Resource
     protected static ?string $navigationGroup = 'Karting';
     protected static ?int $navigationSort = 10;
 
+    private static function ratingField(string $name, string $label): Forms\Components\Component
+    {
+        // Prefer slider if available in installed Filament version, fallback to select.
+        if (class_exists(\Filament\Forms\Components\Slider::class)) {
+            return \Filament\Forms\Components\Slider::make($name)
+                ->label($label)
+                ->minValue(-3)
+                ->maxValue(3)
+                ->step(1)
+                ->default(0);
+        }
+
+        $opts = [];
+        for ($i = -3; $i <= 3; $i++) {
+            $opts[(string) $i] = (string) $i;
+        }
+
+        return Forms\Components\Select::make($name)
+            ->label($label)
+            ->options($opts)
+            ->default('0')
+            ->native(false);
+    }
+
     public static function form(Form $form): Form
     {
-        return $form
-            ->schema([
-                // 🔗 VEZE: trka, vozač, ko je uneo
-                Forms\Components\Section::make('Links')
-                    ->columns(3)
-                    ->schema([
-                        Forms\Components\Select::make('race_id')
-                            ->label('Race / Event')
-                            ->relationship(
-                                name: 'race',
-                                titleAttribute: 'name',
-                                modifyQueryUsing: fn (Builder $query) => $query
-                                    ->when(
-                                        Auth::user()?->team_id,
-                                        fn (Builder $q, $teamId) => $q->where('team_id', $teamId),
-                                    )
+        return $form->schema([
+            // 🔗 VEZE: trka, vozač, ko je uneo
+            Forms\Components\Section::make('Links')
+                ->columns(3)
+                ->schema([
+                    Forms\Components\Select::make('race_id')
+                        ->label('Race / Event')
+                        ->relationship(
+                            name: 'race',
+                            titleAttribute: 'name',
+                            modifyQueryUsing: fn (Builder $query) => $query->when(
+                                Auth::user()?->team_id,
+                                fn (Builder $q, $teamId) => $q->where('team_id', $teamId),
                             )
-                            ->searchable()
-                            ->preload()
-                            ->nullable()
-                            ->createOptionForm([
-                                Forms\Components\Hidden::make('team_id')
-                                    ->default(fn () => Auth::user()?->team_id),
+                        )
+                        ->searchable()
+                        ->preload()
+                        ->nullable()
+                        ->createOptionForm([
+                            Forms\Components\Hidden::make('team_id')
+                                ->default(fn () => Auth::user()?->team_id),
 
-                                Forms\Components\TextInput::make('name')
-                                    ->label('Name')
-                                    ->required()
-                                    ->maxLength(255),
+                            Forms\Components\TextInput::make('name')
+                                ->label('Name')
+                                ->required()
+                                ->maxLength(255),
 
-                                Forms\Components\TextInput::make('track')
-                                    ->label('Track')
-                                    ->maxLength(255),
+                            Forms\Components\TextInput::make('track')
+                                ->label('Track')
+                                ->maxLength(255),
 
-                                Forms\Components\DatePicker::make('date')
-                                    ->label('Date'),
+                            Forms\Components\DatePicker::make('date')
+                                ->label('Date'),
 
-                                Forms\Components\Textarea::make('notes')
-                                    ->label('Notes')
-                                    ->rows(2),
-                            ]),
+                            Forms\Components\Textarea::make('notes')
+                                ->label('Notes')
+                                ->rows(2),
+                        ]),
 
-                        Forms\Components\Select::make('driver_id')
-                            ->label('Driver')
-                            ->relationship(
-                                name: 'driver',
-                                titleAttribute: 'name',
-                                modifyQueryUsing: fn (Builder $query) => $query
-                                    ->when(
-                                        Auth::user()?->team_id,
-                                        fn (Builder $q, $teamId) => $q->where('team_id', $teamId),
-                                    )
+                    Forms\Components\Select::make('driver_id')
+                        ->label('Driver')
+                        ->relationship(
+                            name: 'driver',
+                            titleAttribute: 'name',
+                            modifyQueryUsing: fn (Builder $query) => $query->when(
+                                Auth::user()?->team_id,
+                                fn (Builder $q, $teamId) => $q->where('team_id', $teamId),
                             )
-                            ->searchable()
-                            ->preload()
-                            ->nullable()
-                            ->createOptionForm([
-                                Forms\Components\Hidden::make('team_id')
-                                    ->default(fn () => Auth::user()?->team_id),
+                        )
+                        ->searchable()
+                        ->preload()
+                        ->nullable()
+                        ->createOptionForm([
+                            Forms\Components\Hidden::make('team_id')
+                                ->default(fn () => Auth::user()?->team_id),
 
-                                Forms\Components\TextInput::make('name')
-                                    ->label('Name')
-                                    ->required()
-                                    ->maxLength(255),
+                            Forms\Components\TextInput::make('name')
+                                ->label('Name')
+                                ->required()
+                                ->maxLength(255),
 
-                                Forms\Components\TextInput::make('short_name')
-                                    ->label('Short name')
-                                    ->maxLength(50),
+                            Forms\Components\TextInput::make('short_name')
+                                ->label('Short name')
+                                ->maxLength(50),
 
-                                Forms\Components\TextInput::make('kart_number')
-                                    ->label('Kart #')
-                                    ->numeric()
-                                    ->minValue(0)
-                                    ->maxValue(999)
-                                    ->nullable(),
+                            Forms\Components\TextInput::make('kart_number')
+                                ->label('Kart #')
+                                ->numeric()
+                                ->minValue(0)
+                                ->maxValue(999)
+                                ->nullable(),
 
-                                Forms\Components\TextInput::make('team')
-                                    ->label('Team')
-                                    ->maxLength(255)
-                                    ->nullable(),
-                            ]),
+                            Forms\Components\TextInput::make('team')
+                                ->label('Team')
+                                ->maxLength(255)
+                                ->nullable(),
+                        ]),
 
-                        Forms\Components\Placeholder::make('created_by')
-                            ->label('Created by')
-                            ->content(fn (?SetupSheet $record) =>
-                                $record?->createdBy?->name ?? auth()->user()?->name
-                            ),
-                    ]),
+                    Forms\Components\Placeholder::make('created_by')
+                        ->label('Created by')
+                        ->content(fn (?SetupSheet $record) => $record?->createdBy?->name ?? auth()->user()?->name),
+                ]),
 
-                // 🧾 Osnovne informacije
-                Forms\Components\Section::make('Basic info')
-                    ->columns(2)
-                    ->schema([
-                        Forms\Components\DatePicker::make('date')
-                            ->label('Date')
-                            ->required(),
+            // 🧾 Osnovne informacije
+            Forms\Components\Section::make('Basic info')
+                ->columns(2)
+                ->schema([
+                    Forms\Components\DatePicker::make('date')
+                        ->label('Date')
+                        ->required(),
 
-                        Forms\Components\TextInput::make('time_label')
-                            ->label('Time / Test')
-                            ->maxLength(255),
-                    ]),
+                    Forms\Components\TextInput::make('time_label')
+                        ->label('Time / Test')
+                        ->maxLength(255),
+                ]),
 
-                // 🛞 Kart setup
-                Forms\Components\Section::make('Kart setup')
-                    ->columns(4)
-                    ->schema([
-                        Forms\Components\TextInput::make('chassis')->maxLength(255),
-                        Forms\Components\TextInput::make('carb')->maxLength(255),
-                        Forms\Components\TextInput::make('engine')->maxLength(255),
-                        Forms\Components\TextInput::make('sprocket')->maxLength(255),
-                        Forms\Components\TextInput::make('exhaust')->maxLength(255),
-                        Forms\Components\TextInput::make('spacer')->maxLength(255),
-                        Forms\Components\TextInput::make('axle')->maxLength(255),
-                        Forms\Components\TextInput::make('front_bar')->label('Front bar')->maxLength(255),
-                        Forms\Components\TextInput::make('ch_positions')->label('Ch. positions')->maxLength(255),
-                        Forms\Components\TextInput::make('caster')->maxLength(255),
-                        Forms\Components\TextInput::make('camber')->maxLength(255),
-                        Forms\Components\TextInput::make('tyres_type')->label('Tyres type')->maxLength(255),
-                    ]),
+            // 🛞 Kart setup
+            Forms\Components\Section::make('Kart setup')
+                ->columns(4)
+                ->schema([
+                    Forms\Components\TextInput::make('chassis')->maxLength(255),
+                    Forms\Components\TextInput::make('carb')->maxLength(255),
+                    Forms\Components\TextInput::make('engine')->maxLength(255),
+                    Forms\Components\TextInput::make('sprocket')->maxLength(255),
+                    Forms\Components\TextInput::make('exhaust')->maxLength(255),
+                    Forms\Components\TextInput::make('spacer')->maxLength(255),
+                    Forms\Components\TextInput::make('axle')->maxLength(255),
+                    Forms\Components\TextInput::make('front_bar')->label('Front bar')->maxLength(255),
+                    Forms\Components\TextInput::make('ch_positions')->label('Ch. positions')->maxLength(255),
 
-                // Pritisci
-                Forms\Components\Section::make('Tyre pressures')
-                    ->columns(3)
-                    ->schema([
-                        Forms\Components\TextInput::make('front_entry')->label('Front entry')->maxLength(255),
-                        Forms\Components\TextInput::make('front_mid')->label('Front mid')->maxLength(255),
-                        Forms\Components\TextInput::make('front_exit')->label('Front exit')->maxLength(255),
-                        Forms\Components\TextInput::make('rear_entry')->label('Rear entry')->maxLength(255),
-                        Forms\Components\TextInput::make('rear_mid')->label('Rear mid')->maxLength(255),
-                        Forms\Components\TextInput::make('rear_exit')->label('Rear exit')->maxLength(255),
-                    ]),
+                    // ✅ Camber pa Caster
+                    Forms\Components\TextInput::make('camber')->maxLength(255),
+                    Forms\Components\TextInput::make('caster')->maxLength(255),
 
-                // Motor
-                Forms\Components\Section::make('Engine')
-                    ->columns(3)
-                    ->schema([
-                        Forms\Components\TextInput::make('engine_low')->label('Low')->maxLength(255),
-                        Forms\Components\TextInput::make('engine_mid')->label('Mid')->maxLength(255),
-                        Forms\Components\TextInput::make('engine_top')->label('Top')->maxLength(255),
-                    ]),
+                    Forms\Components\TextInput::make('tyres_type')->label('Tyres type')->maxLength(255),
+                ]),
 
-                // Rezultat + komentari
-                Forms\Components\Section::make('Result')
-                    ->columns(2)
-                    ->schema([
-                        Forms\Components\TextInput::make('temperature')->label('Temperature')->maxLength(255),
-                        Forms\Components\TextInput::make('fastest_lap')->label('Fastest lap')->maxLength(255),
-                        Forms\Components\Textarea::make('comments')
-                            ->label('Comments')
-                            ->columnSpanFull(),
-                    ]),
-            ]);
+            // ✅ Tyre pressures – 2 kvadrata (cold/hot) 2x2 jedna do druge
+            Forms\Components\Section::make('Tyre pressures')
+                ->columns(2)
+                ->schema([
+                    Forms\Components\Fieldset::make('Cold')
+                        ->columns(2)
+                        ->columnSpan(1) // ✅ forsira da zauzme 1/2 širine
+                        ->schema([
+                            Forms\Components\TextInput::make('pressure_cold_fl')->label('FL')->numeric()->step(0.1),
+                            Forms\Components\TextInput::make('pressure_cold_fr')->label('FR')->numeric()->step(0.1),
+                            Forms\Components\TextInput::make('pressure_cold_rl')->label('RL')->numeric()->step(0.1),
+                            Forms\Components\TextInput::make('pressure_cold_rr')->label('RR')->numeric()->step(0.1),
+                        ]),
+
+                    Forms\Components\Fieldset::make('Hot')
+                        ->columns(2)
+                        ->columnSpan(1) // ✅ forsira da zauzme 1/2 širine
+                        ->schema([
+                            Forms\Components\TextInput::make('pressure_hot_fl')->label('FL')->numeric()->step(0.1),
+                            Forms\Components\TextInput::make('pressure_hot_fr')->label('FR')->numeric()->step(0.1),
+                            Forms\Components\TextInput::make('pressure_hot_rl')->label('RL')->numeric()->step(0.1),
+                            Forms\Components\TextInput::make('pressure_hot_rr')->label('RR')->numeric()->step(0.1),
+                        ]),
+                ]),
+
+            // ✅ Sliders -3..3 (default 0)
+            Forms\Components\Section::make('Balance / Handling')
+                ->columns(3)
+                ->schema([
+                    self::ratingField('front_entry', 'Front entry'),
+                    self::ratingField('front_mid', 'Front mid'),
+                    self::ratingField('front_exit', 'Front exit'),
+
+                    self::ratingField('rear_entry', 'Rear entry'),
+                    self::ratingField('rear_mid', 'Rear mid'),
+                    self::ratingField('rear_exit', 'Rear exit'),
+                ]),
+
+            Forms\Components\Section::make('Engine')
+                ->columns(3)
+                ->schema([
+                    self::ratingField('engine_low', 'Low'),
+                    self::ratingField('engine_mid', 'Mid'),
+                    self::ratingField('engine_top', 'Top'),
+                ]),
+
+            // Rezultat + komentari
+            Forms\Components\Section::make('Result')
+                ->columns(3)
+                ->schema([
+                    Forms\Components\TextInput::make('temperature')->label('Temperature')->maxLength(255),
+
+                    Forms\Components\TextInput::make('lap_time')->label('Lap time')->maxLength(255),
+
+                    Forms\Components\TextInput::make('fastest_lap')->label('Fastest lap')->maxLength(255),
+
+                    Forms\Components\Textarea::make('comments')
+                        ->label('Comments')
+                        ->columnSpanFull(),
+                ]),
+        ]);
     }
 
     public static function table(Table $table): Table
     {
         return $table
             ->columns([
-                // === Default vidljive kolone ===
                 Tables\Columns\TextColumn::make('date')
                     ->date()
                     ->sortable()
@@ -202,6 +253,10 @@ class SetupSheetResource extends Resource
                     ->label('Time / Test')
                     ->toggleable(),
 
+                Tables\Columns\TextColumn::make('lap_time')
+                    ->label('Lap time')
+                    ->toggleable(),
+
                 Tables\Columns\TextColumn::make('fastest_lap')
                     ->label('Fastest lap')
                     ->toggleable(),
@@ -210,27 +265,58 @@ class SetupSheetResource extends Resource
                     ->label('Temp')
                     ->toggleable(),
 
-                // === Setup detalji – sakriveni po difoltu, mogu da se upale po potrebi ===
-                Tables\Columns\TextColumn::make('chassis')
+                // ✅ grouped tyre pressures (toggle hidden by default)
+                Tables\Columns\TextColumn::make('pressure_cold_summary')
+                    ->label('Pressure (Cold)')
+                    ->html()
+                    ->state(function (SetupSheet $record) {
+                        $fl = $record->pressure_cold_fl;
+                        $fr = $record->pressure_cold_fr;
+                        $rl = $record->pressure_cold_rl;
+                        $rr = $record->pressure_cold_rr;
+
+                        if ($fl === null && $fr === null && $rl === null && $rr === null) {
+                            return '—';
+                        }
+
+                        return new HtmlString(
+                            '<div class="text-xs leading-5">' .
+                                '<div><strong>FL</strong> ' . e((string) $fl) . ' &nbsp; <strong>FR</strong> ' . e((string) $fr) . '</div>' .
+                                '<div><strong>RL</strong> ' . e((string) $rl) . ' &nbsp; <strong>RR</strong> ' . e((string) $rr) . '</div>' .
+                            '</div>'
+                        );
+                    })
                     ->toggleable(isToggledHiddenByDefault: true),
 
-                Tables\Columns\TextColumn::make('engine')
+                Tables\Columns\TextColumn::make('pressure_hot_summary')
+                    ->label('Pressure (Hot)')
+                    ->html()
+                    ->state(function (SetupSheet $record) {
+                        $fl = $record->pressure_hot_fl;
+                        $fr = $record->pressure_hot_fr;
+                        $rl = $record->pressure_hot_rl;
+                        $rr = $record->pressure_hot_rr;
+
+                        if ($fl === null && $fr === null && $rl === null && $rr === null) {
+                            return '—';
+                        }
+
+                        return new HtmlString(
+                            '<div class="text-xs leading-5">' .
+                                '<div><strong>FL</strong> ' . e((string) $fl) . ' &nbsp; <strong>FR</strong> ' . e((string) $fr) . '</div>' .
+                                '<div><strong>RL</strong> ' . e((string) $rl) . ' &nbsp; <strong>RR</strong> ' . e((string) $rr) . '</div>' .
+                            '</div>'
+                        );
+                    })
                     ->toggleable(isToggledHiddenByDefault: true),
 
-                Tables\Columns\TextColumn::make('sprocket')
-                    ->toggleable(isToggledHiddenByDefault: true),
+                // === Setup detalji – sakriveni po difoltu ===
+                Tables\Columns\TextColumn::make('chassis')->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('engine')->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('sprocket')->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('tyres_type')->label('Tyres')->toggleable(isToggledHiddenByDefault: true),
 
-                Tables\Columns\TextColumn::make('tyres_type')
-                    ->label('Tyres')
-                    ->toggleable(isToggledHiddenByDefault: true),
-
-                Tables\Columns\TextColumn::make('front_entry')
-                    ->label('Front entry')
-                    ->toggleable(isToggledHiddenByDefault: true),
-
-                Tables\Columns\TextColumn::make('rear_entry')
-                    ->label('Rear entry')
-                    ->toggleable(isToggledHiddenByDefault: true),
+                // ✅ uklonjeno: front_entry / rear_entry kolone iz liste
 
                 // === Meta / audit polja – sakrivena po difoltu ===
                 Tables\Columns\TextColumn::make('createdBy.name')
@@ -305,17 +391,14 @@ class SetupSheetResource extends Resource
 
         $user = auth()->user();
 
-        // Ako nema user-a iz nekog razloga – ne vraćamo ništa
         if (! $user) {
             return $query->whereRaw('1 = 0');
         }
 
-        // Super admin vidi sve
         if ($user->isSuperAdmin()) {
             return $query;
         }
 
-        // Svi ostali vide samo svoj tim
         return $query->where('team_id', $user->team_id);
     }
 }

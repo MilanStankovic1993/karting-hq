@@ -16,8 +16,10 @@ class SetupSheet extends Model
         'driver_id',
         'created_by_id',
         'updated_by_id',
+
         'date',
         'time_label',
+
         'chassis',
         'carb',
         'engine',
@@ -27,21 +29,67 @@ class SetupSheet extends Model
         'axle',
         'front_bar',
         'ch_positions',
-        'caster',
         'camber',
+        'caster',
         'tyres_type',
+
+        // tyre pressures (cold)
+        'pressure_cold_fl',
+        'pressure_cold_fr',
+        'pressure_cold_rl',
+        'pressure_cold_rr',
+
+        // tyre pressures (hot)
+        'pressure_hot_fl',
+        'pressure_hot_fr',
+        'pressure_hot_rl',
+        'pressure_hot_rr',
+
+        // handling (sliders)
         'front_entry',
         'front_mid',
         'front_exit',
         'rear_entry',
         'rear_mid',
         'rear_exit',
+
+        // engine needles (sliders)
         'engine_low',
         'engine_mid',
         'engine_top',
+
+        // results
         'temperature',
+        'lap_time',
         'fastest_lap',
         'comments',
+    ];
+
+    protected $casts = [
+        'date' => 'date',
+
+        // ✅ decimal pressures
+        'pressure_cold_fl' => 'decimal:2',
+        'pressure_cold_fr' => 'decimal:2',
+        'pressure_cold_rl' => 'decimal:2',
+        'pressure_cold_rr' => 'decimal:2',
+
+        'pressure_hot_fl' => 'decimal:2',
+        'pressure_hot_fr' => 'decimal:2',
+        'pressure_hot_rl' => 'decimal:2',
+        'pressure_hot_rr' => 'decimal:2',
+
+        // ✅ sliders: u app-u tretiramo kao int (iako su string u DB)
+        'front_entry' => 'integer',
+        'front_mid' => 'integer',
+        'front_exit' => 'integer',
+        'rear_entry' => 'integer',
+        'rear_mid' => 'integer',
+        'rear_exit' => 'integer',
+
+        'engine_low' => 'integer',
+        'engine_mid' => 'integer',
+        'engine_top' => 'integer',
     ];
 
     /* -----------------------------------

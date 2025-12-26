@@ -4,8 +4,8 @@ namespace App\Filament\Resources\SetupSheetResource\Pages;
 
 use App\Filament\Resources\SetupSheetResource;
 use App\Models\SetupSheet;
-use Filament\Resources\Pages\CreateRecord;
 use Filament\Actions;
+use Filament\Resources\Pages\CreateRecord;
 
 class CreateSetupSheet extends CreateRecord
 {
@@ -20,6 +20,23 @@ class CreateSetupSheet extends CreateRecord
             return;
         }
 
+        // ✅ Guard: ako je forma već popunjena (npr. posle validation error), ne diramo.
+        // Ali ako je data setovana a zapravo prazna, dozvoli prefill.
+        if (! empty($this->data)) {
+            $hasMeaningful = false;
+
+            foreach (['race_id','driver_id','time_label','chassis','engine','tyres_type'] as $k) {
+                if (! empty($this->data[$k] ?? null)) {
+                    $hasMeaningful = true;
+                    break;
+                }
+            }
+
+            if ($hasMeaningful) {
+                return;
+            }
+        }
+
         // Poslednja shema koju je kreirao OVAJ korisnik
         $lastSheet = SetupSheet::query()
             ->where('created_by_id', $user->id)
@@ -27,10 +44,18 @@ class CreateSetupSheet extends CreateRecord
             ->first();
 
         if (! $lastSheet) {
+            // bar postavi datum danas i očisti rezultate
+            $this->form->fill([
+                'date' => now()->toDateString(),
+                'temperature' => null,
+                'lap_time' => null,
+                'fastest_lap' => null,
+                'comments' => null,
+            ]);
             return;
         }
 
-        // Polja koja želiš da povučeš iz prethodne sheme
+        // Polja koja povlačimo iz prethodne sheme
         $data = $lastSheet->only([
             'race_id',
             'driver_id',
@@ -45,10 +70,23 @@ class CreateSetupSheet extends CreateRecord
             'axle',
             'front_bar',
             'ch_positions',
-            'caster',
             'camber',
+            'caster',
             'tyres_type',
 
+            // tyre pressures (cold)
+            'pressure_cold_fl',
+            'pressure_cold_fr',
+            'pressure_cold_rl',
+            'pressure_cold_rr',
+
+            // tyre pressures (hot)
+            'pressure_hot_fl',
+            'pressure_hot_fr',
+            'pressure_hot_rl',
+            'pressure_hot_rr',
+
+            // sliders
             'front_entry',
             'front_mid',
             'front_exit',
@@ -59,41 +97,37 @@ class CreateSetupSheet extends CreateRecord
             'engine_low',
             'engine_mid',
             'engine_top',
-
-            'temperature',
         ]);
 
-        // Za novi unos: datum danas, a vreme rezultata i komentari prazni
+        // Novi unos: datum danas, rezultati prazni
         $data['date'] = now()->toDateString();
+        $data['temperature'] = null;
+        $data['lap_time'] = null;
         $data['fastest_lap'] = null;
         $data['comments'] = null;
 
         $this->form->fill($data);
     }
 
-    /**
-     * Posle običnog "Create" vraća na listu.
-     */
     protected function getRedirectUrl(): string
     {
         return static::getResource()::getUrl('index');
     }
 
-    /**
-     * Za "Create & create another" – šta ostaje u formi posle kreiranja.
-     */
     protected function preserveFormDataWhenCreatingAnother(array $data): array
     {
-        // Po defaultu ostavi sve, pa očisti šta nećeš
+        // ostavi sve setup vrednosti (uključujući tyre pressures), a očisti rezultate
+        $data['temperature'] = null;
+        $data['lap_time'] = null;
         $data['fastest_lap'] = null;
         $data['comments'] = null;
+
+        // datum uvek današnji (da ne ostane stari)
+        $data['date'] = now()->toDateString();
 
         return $data;
     }
 
-    /**
-     * Samo menjamo label da bude jasnija.
-     */
     protected function getCreateAnotherFormAction(): Actions\Action
     {
         return parent::getCreateAnotherFormAction()
