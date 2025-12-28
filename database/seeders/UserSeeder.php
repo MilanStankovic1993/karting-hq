@@ -14,8 +14,8 @@ class UserSeeder extends Seeder
         $teamA = Team::firstOrCreate(['name' => 'Team Alpha']);
         $teamB = Team::firstOrCreate(['name' => 'Team Bravo']);
 
-        $adminEmail = env('SEED_ADMIN_EMAIL', 'admin@karting-hq.com');
-        $adminPass  = env('SEED_ADMIN_PASSWORD', 'ChangeMe123!');
+        $adminEmail = env('SEED_ADMIN_EMAIL', 'milanstankovic19939@gmail.com');
+        $adminPass  = env('SEED_ADMIN_PASSWORD', '28Januar');
 
         // SUPER ADMIN
         User::updateOrCreate(
