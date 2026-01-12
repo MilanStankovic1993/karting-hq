@@ -25,7 +25,7 @@ class CreateSetupSheet extends CreateRecord
         if (! empty($this->data)) {
             $hasMeaningful = false;
 
-            foreach (['race_id','driver_id','time_label','chassis','engine','tyres_type'] as $k) {
+            foreach (['race_id', 'driver_id', 'time_label', 'chassis', 'engine', 'tyres_type'] as $k) {
                 if (! empty($this->data[$k] ?? null)) {
                     $hasMeaningful = true;
                     break;
@@ -69,7 +69,11 @@ class CreateSetupSheet extends CreateRecord
             'spacer',
             'axle',
             'front_bar',
-            'ch_positions',
+
+            // ✅ CH POSITION
+            'ch_position_front',
+            'ch_position_rear',
+
             'camber',
             'caster',
             'tyres_type',
@@ -86,7 +90,7 @@ class CreateSetupSheet extends CreateRecord
             'pressure_hot_rl',
             'pressure_hot_rr',
 
-            // sliders
+            // balance / handling
             'front_entry',
             'front_mid',
             'front_exit',
@@ -94,6 +98,7 @@ class CreateSetupSheet extends CreateRecord
             'rear_mid',
             'rear_exit',
 
+            // engine
             'engine_low',
             'engine_mid',
             'engine_top',

@@ -48,6 +48,41 @@ class SetupSheetResource extends Resource
             ->native(false);
     }
 
+    /**
+     * Tyre pressure input:
+     * - UI: integer without decimals (66)
+     * - DB: float with leading zero (0.66)
+     */
+    private static function pressureField(string $name, string $label): Forms\Components\TextInput
+    {
+        return Forms\Components\TextInput::make($name)
+            ->label($label)
+            ->numeric()
+            ->step(1) // no decimals in UI
+            ->minValue(0)
+            ->maxValue(300)
+            // DB -> UI (0.66 -> 66)
+            ->formatStateUsing(fn ($state) => $state === null ? null : (int) round(((float) $state) * 100))
+            // UI -> DB (66 -> 0.66)
+            ->dehydrateStateUsing(fn ($state) => $state === null || $state === '' ? null : ((float) $state) / 100);
+    }
+
+    private static function pressureSummary(?float $fl, ?float $fr, ?float $rl, ?float $rr): HtmlString|string
+    {
+        if ($fl === null && $fr === null && $rl === null && $rr === null) {
+            return '—';
+        }
+
+        $fmt = fn ($v) => $v === null ? '—' : (string) ((int) round($v * 100));
+
+        return new HtmlString(
+            '<div class="text-xs leading-5">' .
+                '<div><strong>FL</strong> ' . e($fmt($fl)) . ' &nbsp; <strong>FR</strong> ' . e($fmt($fr)) . '</div>' .
+                '<div><strong>RL</strong> ' . e($fmt($rl)) . ' &nbsp; <strong>RR</strong> ' . e($fmt($rr)) . '</div>' .
+            '</div>'
+        );
+    }
+
     public static function form(Form $form): Form
     {
         return $form->schema([
@@ -158,7 +193,10 @@ class SetupSheetResource extends Resource
                     Forms\Components\TextInput::make('spacer')->maxLength(255),
                     Forms\Components\TextInput::make('axle')->maxLength(255),
                     Forms\Components\TextInput::make('front_bar')->label('Front bar')->maxLength(255),
-                    Forms\Components\TextInput::make('ch_positions')->label('Ch. positions')->maxLength(255),
+
+                    // ✅ CH POSITION (2 polja)
+                    Forms\Components\TextInput::make('ch_position_front')->label('CH position – Front')->maxLength(255),
+                    Forms\Components\TextInput::make('ch_position_rear')->label('CH position – Rear')->maxLength(255),
 
                     // ✅ Camber pa Caster
                     Forms\Components\TextInput::make('camber')->maxLength(255),
@@ -173,22 +211,22 @@ class SetupSheetResource extends Resource
                 ->schema([
                     Forms\Components\Fieldset::make('Cold')
                         ->columns(2)
-                        ->columnSpan(1) // ✅ forsira da zauzme 1/2 širine
+                        ->columnSpan(1)
                         ->schema([
-                            Forms\Components\TextInput::make('pressure_cold_fl')->label('FL')->numeric()->step(0.1),
-                            Forms\Components\TextInput::make('pressure_cold_fr')->label('FR')->numeric()->step(0.1),
-                            Forms\Components\TextInput::make('pressure_cold_rl')->label('RL')->numeric()->step(0.1),
-                            Forms\Components\TextInput::make('pressure_cold_rr')->label('RR')->numeric()->step(0.1),
+                            self::pressureField('pressure_cold_fl', 'FL'),
+                            self::pressureField('pressure_cold_fr', 'FR'),
+                            self::pressureField('pressure_cold_rl', 'RL'),
+                            self::pressureField('pressure_cold_rr', 'RR'),
                         ]),
 
                     Forms\Components\Fieldset::make('Hot')
                         ->columns(2)
-                        ->columnSpan(1) // ✅ forsira da zauzme 1/2 širine
+                        ->columnSpan(1)
                         ->schema([
-                            Forms\Components\TextInput::make('pressure_hot_fl')->label('FL')->numeric()->step(0.1),
-                            Forms\Components\TextInput::make('pressure_hot_fr')->label('FR')->numeric()->step(0.1),
-                            Forms\Components\TextInput::make('pressure_hot_rl')->label('RL')->numeric()->step(0.1),
-                            Forms\Components\TextInput::make('pressure_hot_rr')->label('RR')->numeric()->step(0.1),
+                            self::pressureField('pressure_hot_fl', 'FL'),
+                            self::pressureField('pressure_hot_fr', 'FR'),
+                            self::pressureField('pressure_hot_rl', 'RL'),
+                            self::pressureField('pressure_hot_rr', 'RR'),
                         ]),
                 ]),
 
@@ -218,9 +256,7 @@ class SetupSheetResource extends Resource
                 ->columns(3)
                 ->schema([
                     Forms\Components\TextInput::make('temperature')->label('Temperature')->maxLength(255),
-
                     Forms\Components\TextInput::make('lap_time')->label('Lap time')->maxLength(255),
-
                     Forms\Components\TextInput::make('fastest_lap')->label('Fastest lap')->maxLength(255),
 
                     Forms\Components\Textarea::make('comments')
@@ -269,45 +305,23 @@ class SetupSheetResource extends Resource
                 Tables\Columns\TextColumn::make('pressure_cold_summary')
                     ->label('Pressure (Cold)')
                     ->html()
-                    ->state(function (SetupSheet $record) {
-                        $fl = $record->pressure_cold_fl;
-                        $fr = $record->pressure_cold_fr;
-                        $rl = $record->pressure_cold_rl;
-                        $rr = $record->pressure_cold_rr;
-
-                        if ($fl === null && $fr === null && $rl === null && $rr === null) {
-                            return '—';
-                        }
-
-                        return new HtmlString(
-                            '<div class="text-xs leading-5">' .
-                                '<div><strong>FL</strong> ' . e((string) $fl) . ' &nbsp; <strong>FR</strong> ' . e((string) $fr) . '</div>' .
-                                '<div><strong>RL</strong> ' . e((string) $rl) . ' &nbsp; <strong>RR</strong> ' . e((string) $rr) . '</div>' .
-                            '</div>'
-                        );
-                    })
+                    ->state(fn (SetupSheet $r) => self::pressureSummary(
+                        $r->pressure_cold_fl,
+                        $r->pressure_cold_fr,
+                        $r->pressure_cold_rl,
+                        $r->pressure_cold_rr
+                    ))
                     ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\TextColumn::make('pressure_hot_summary')
                     ->label('Pressure (Hot)')
                     ->html()
-                    ->state(function (SetupSheet $record) {
-                        $fl = $record->pressure_hot_fl;
-                        $fr = $record->pressure_hot_fr;
-                        $rl = $record->pressure_hot_rl;
-                        $rr = $record->pressure_hot_rr;
-
-                        if ($fl === null && $fr === null && $rl === null && $rr === null) {
-                            return '—';
-                        }
-
-                        return new HtmlString(
-                            '<div class="text-xs leading-5">' .
-                                '<div><strong>FL</strong> ' . e((string) $fl) . ' &nbsp; <strong>FR</strong> ' . e((string) $fr) . '</div>' .
-                                '<div><strong>RL</strong> ' . e((string) $rl) . ' &nbsp; <strong>RR</strong> ' . e((string) $rr) . '</div>' .
-                            '</div>'
-                        );
-                    })
+                    ->state(fn (SetupSheet $r) => self::pressureSummary(
+                        $r->pressure_hot_fl,
+                        $r->pressure_hot_fr,
+                        $r->pressure_hot_rl,
+                        $r->pressure_hot_rr
+                    ))
                     ->toggleable(isToggledHiddenByDefault: true),
 
                 // === Setup detalji – sakriveni po difoltu ===
@@ -315,8 +329,6 @@ class SetupSheetResource extends Resource
                 Tables\Columns\TextColumn::make('engine')->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('sprocket')->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('tyres_type')->label('Tyres')->toggleable(isToggledHiddenByDefault: true),
-
-                // ✅ uklonjeno: front_entry / rear_entry kolone iz liste
 
                 // === Meta / audit polja – sakrivena po difoltu ===
                 Tables\Columns\TextColumn::make('createdBy.name')

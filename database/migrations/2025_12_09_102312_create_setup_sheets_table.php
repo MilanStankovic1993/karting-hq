@@ -28,7 +28,7 @@ return new class extends Migration
                 ->constrained('teams')
                 ->nullOnDelete();
 
-            // VEZE (direktno ovde, kad radimo fresh bazu)
+            // VEZE
             $table->foreignId('race_id')
                 ->nullable()
                 ->constrained('races')
@@ -39,11 +39,11 @@ return new class extends Migration
                 ->constrained('drivers')
                 ->nullOnDelete();
 
-            // Header
+            // HEADER
             $table->date('date')->nullable();
             $table->string('time_label')->nullable();
 
-            // Kart setup fields
+            // KART SETUP
             $table->string('chassis')->nullable();
             $table->string('carb')->nullable();
             $table->string('engine')->nullable();
@@ -52,26 +52,30 @@ return new class extends Migration
             $table->string('spacer')->nullable();
             $table->string('axle')->nullable();
             $table->string('front_bar')->nullable();
-            $table->string('ch_positions')->nullable();
 
-            // ✅ po zahtevu: camber pa caster (UI rešava redosled, ali kolone su tu)
+            // ✅ CH POSITION – REALNO (FRONT / REAR)
+            $table->string('ch_position_front')->nullable();
+            $table->string('ch_position_rear')->nullable();
+
+            // CAMBER / CASTER
             $table->string('camber')->nullable();
             $table->string('caster')->nullable();
 
             $table->string('tyres_type')->nullable();
 
-            // ✅ Tyre pressures (cold 2x2 + hot 2x2)
+            // ✅ TYRE PRESSURES – 2x2 (COLD)
             $table->decimal('pressure_cold_fl', 5, 2)->nullable();
             $table->decimal('pressure_cold_fr', 5, 2)->nullable();
             $table->decimal('pressure_cold_rl', 5, 2)->nullable();
             $table->decimal('pressure_cold_rr', 5, 2)->nullable();
 
+            // ✅ TYRE PRESSURES – 2x2 (HOT)
             $table->decimal('pressure_hot_fl', 5, 2)->nullable();
             $table->decimal('pressure_hot_fr', 5, 2)->nullable();
             $table->decimal('pressure_hot_rl', 5, 2)->nullable();
             $table->decimal('pressure_hot_rr', 5, 2)->nullable();
 
-            // Balance / Handling (slider -3..3) - ostaje string radi kompatibilnosti
+            // BALANCE / HANDLING (slider -3..3)
             $table->string('front_entry')->nullable();
             $table->string('front_mid')->nullable();
             $table->string('front_exit')->nullable();
@@ -79,14 +83,14 @@ return new class extends Migration
             $table->string('rear_mid')->nullable();
             $table->string('rear_exit')->nullable();
 
-            // Engine needles (slider -3..3) - ostaje string radi kompatibilnosti
+            // ENGINE NEEDLES (slider -3..3)
             $table->string('engine_low')->nullable();
             $table->string('engine_mid')->nullable();
             $table->string('engine_top')->nullable();
 
-            // Results
+            // RESULTS
             $table->string('temperature')->nullable();
-            $table->string('lap_time')->nullable();     // ✅ između temp i fastest lap
+            $table->string('lap_time')->nullable();
             $table->string('fastest_lap')->nullable();
             $table->text('comments')->nullable();
 
