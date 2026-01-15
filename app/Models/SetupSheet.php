@@ -32,6 +32,16 @@ class SetupSheet extends Model
         'axle',
         'front_bar',
 
+        // ✅ NEW standard
+        'wheels',
+
+        // ✅ NEW special (collapsible)
+        'rear_hubs',
+        'front_hubs',
+        'special_axle',
+        'bearing_carriers',
+        'rear_width',
+
         // ✅ CH POSITION (FRONT / REAR)
         'ch_position_front',
         'ch_position_rear',
@@ -99,6 +109,10 @@ class SetupSheet extends Model
         'engine_low'  => 'integer',
         'engine_mid'  => 'integer',
         'engine_top'  => 'integer',
+
+        // ✅ NEW numeric fields
+        'front_hubs' => 'integer',
+        'rear_width' => 'integer',
     ];
 
     /* -----------------------------------

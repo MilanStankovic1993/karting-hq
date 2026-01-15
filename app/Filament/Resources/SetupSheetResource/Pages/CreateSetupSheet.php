@@ -20,13 +20,40 @@ class CreateSetupSheet extends CreateRecord
             return;
         }
 
-        // ✅ Guard: ako je forma već popunjena (npr. posle validation error), ne diramo.
-        // Ali ako je data setovana a zapravo prazna, dozvoli prefill.
+        /**
+         * ✅ Guard:
+         * Ako je forma već popunjena (npr. posle validation error), ne diramo.
+         * Ali ako je data setovana a zapravo prazna, dozvoli prefill.
+         */
         if (! empty($this->data)) {
             $hasMeaningful = false;
 
-            foreach (['race_id', 'driver_id', 'time_label', 'chassis', 'engine', 'tyres_type'] as $k) {
-                if (! empty($this->data[$k] ?? null)) {
+            // Dodaj ovde ključna polja koja ako su popunjena -> ne radimo prefill
+            foreach ([
+                'race_id',
+                'driver_id',
+                'time_label',
+                'chassis',
+                'engine',
+                'tyres_type',
+
+                // ✅ NEW
+                'wheels',
+                'rear_hubs',
+                'front_hubs',
+                'special_axle',
+                'bearing_carriers',
+                'rear_width',
+            ] as $k) {
+                $v = $this->data[$k] ?? null;
+
+                // numeric 0 je “meaningful” ako ga korisnik setuje (front_hubs/rear_width)
+                if ($v === 0 || $v === '0') {
+                    $hasMeaningful = true;
+                    break;
+                }
+
+                if (! empty($v)) {
                     $hasMeaningful = true;
                     break;
                 }
@@ -69,6 +96,16 @@ class CreateSetupSheet extends CreateRecord
             'spacer',
             'axle',
             'front_bar',
+
+            // ✅ NEW standard
+            'wheels',
+
+            // ✅ NEW special
+            // 'rear_hubs',
+            // 'front_hubs',
+            // 'special_axle',
+            // 'bearing_carriers',
+            // 'rear_width',
 
             // ✅ CH POSITION
             'ch_position_front',

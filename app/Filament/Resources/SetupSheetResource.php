@@ -11,6 +11,8 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
+use Filament\Forms\Get;
+use Filament\Forms\Set;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\HtmlString;
@@ -26,7 +28,6 @@ class SetupSheetResource extends Resource
 
     private static function ratingField(string $name, string $label): Forms\Components\Component
     {
-        // Prefer slider if available in installed Filament version, fallback to select.
         if (class_exists(\Filament\Forms\Components\Slider::class)) {
             return \Filament\Forms\Components\Slider::make($name)
                 ->label($label)
@@ -48,22 +49,15 @@ class SetupSheetResource extends Resource
             ->native(false);
     }
 
-    /**
-     * Tyre pressure input:
-     * - UI: integer without decimals (66)
-     * - DB: float with leading zero (0.66)
-     */
     private static function pressureField(string $name, string $label): Forms\Components\TextInput
     {
         return Forms\Components\TextInput::make($name)
             ->label($label)
             ->numeric()
-            ->step(1) // no decimals in UI
+            ->step(1)
             ->minValue(0)
             ->maxValue(300)
-            // DB -> UI (0.66 -> 66)
             ->formatStateUsing(fn ($state) => $state === null ? null : (int) round(((float) $state) * 100))
-            // UI -> DB (66 -> 0.66)
             ->dehydrateStateUsing(fn ($state) => $state === null || $state === '' ? null : ((float) $state) / 100);
     }
 
@@ -86,7 +80,6 @@ class SetupSheetResource extends Resource
     public static function form(Form $form): Form
     {
         return $form->schema([
-            // 🔗 VEZE: trka, vozač, ko je uneo
             Forms\Components\Section::make('Links')
                 ->columns(3)
                 ->schema([
@@ -168,7 +161,6 @@ class SetupSheetResource extends Resource
                         ->content(fn (?SetupSheet $record) => $record?->createdBy?->name ?? auth()->user()?->name),
                 ]),
 
-            // 🧾 Osnovne informacije
             Forms\Components\Section::make('Basic info')
                 ->columns(2)
                 ->schema([
@@ -181,7 +173,6 @@ class SetupSheetResource extends Resource
                         ->maxLength(255),
                 ]),
 
-            // 🛞 Kart setup
             Forms\Components\Section::make('Kart setup')
                 ->columns(4)
                 ->schema([
@@ -194,18 +185,146 @@ class SetupSheetResource extends Resource
                     Forms\Components\TextInput::make('axle')->maxLength(255),
                     Forms\Components\TextInput::make('front_bar')->label('Front bar')->maxLength(255),
 
-                    // ✅ CH POSITION (2 polja)
+                    Forms\Components\TextInput::make('wheels')
+                        ->label('Wheels')
+                        ->maxLength(255),
+
                     Forms\Components\TextInput::make('ch_position_front')->label('CH position – Front')->maxLength(255),
                     Forms\Components\TextInput::make('ch_position_rear')->label('CH position – Rear')->maxLength(255),
 
-                    // ✅ Camber pa Caster
                     Forms\Components\TextInput::make('camber')->maxLength(255),
                     Forms\Components\TextInput::make('caster')->maxLength(255),
 
                     Forms\Components\TextInput::make('tyres_type')->label('Tyres type')->maxLength(255),
                 ]),
 
-            // ✅ Tyre pressures – 2 kvadrata (cold/hot) 2x2 jedna do druge
+            /**
+             * ✅ Special (optional) – svaki field ima svoj toggle (uključi/isključi posebno)
+             */
+            Forms\Components\Section::make('Special (optional)')
+                ->description('Enable only what you need')
+                ->collapsible()
+                ->collapsed()
+                ->columns(3)
+                ->schema([
+                    // --- Rear hubs ---
+                    Forms\Components\Toggle::make('show_rear_hubs')
+                        ->label('Rear hubs')
+                        ->helperText('Enable field')
+                        ->dehydrated(false)
+                        ->live()
+                        ->afterStateHydrated(function (Forms\Components\Toggle $component, ?SetupSheet $record) {
+                            $component->state(filled($record?->rear_hubs));
+                        })
+                        ->afterStateUpdated(function ($state, Set $set) {
+                            if (! $state) {
+                                $set('rear_hubs', null);
+                            }
+                        }),
+
+                    Forms\Components\TextInput::make('rear_hubs')
+                        ->label('Rear hubs value')
+                        ->maxLength(255)
+                        ->nullable()
+                        ->visible(fn (Get $get) => (bool) $get('show_rear_hubs'))
+                        ->columnSpan(2),
+
+                    // --- Front hubs ---
+                    Forms\Components\Toggle::make('show_front_hubs')
+                        ->label('Front hubs')
+                        ->helperText('Enable field')
+                        ->dehydrated(false)
+                        ->live()
+                        ->afterStateHydrated(function (Forms\Components\Toggle $component, ?SetupSheet $record) {
+                            $component->state($record?->front_hubs !== null);
+                        })
+                        ->afterStateUpdated(function ($state, Set $set) {
+                            if (! $state) {
+                                $set('front_hubs', null);
+                            }
+                        }),
+
+                    Forms\Components\TextInput::make('front_hubs')
+                        ->label('Front hubs value')
+                        ->numeric()
+                        ->step(1)
+                        ->minValue(0)
+                        ->maxValue(9999)
+                        ->nullable()
+                        ->visible(fn (Get $get) => (bool) $get('show_front_hubs'))
+                        ->columnSpan(2),
+
+                    // --- Special axle ---
+                    Forms\Components\Toggle::make('show_special_axle')
+                        ->label('Special axle')
+                        ->helperText('Enable field')
+                        ->dehydrated(false)
+                        ->live()
+                        ->afterStateHydrated(function (Forms\Components\Toggle $component, ?SetupSheet $record) {
+                            $component->state(filled($record?->special_axle));
+                        })
+                        ->afterStateUpdated(function ($state, Set $set) {
+                            if (! $state) {
+                                $set('special_axle', null);
+                            }
+                        }),
+
+                    Forms\Components\TextInput::make('special_axle')
+                        ->label('Special axle value')
+                        ->maxLength(255)
+                        ->nullable()
+                        ->visible(fn (Get $get) => (bool) $get('show_special_axle'))
+                        ->columnSpan(2),
+
+                    // --- Bearing carriers ---
+                    Forms\Components\Toggle::make('show_bearing_carriers')
+                        ->label('Bearing carriers')
+                        ->helperText('Enable field')
+                        ->dehydrated(false)
+                        ->live()
+                        ->afterStateHydrated(function (Forms\Components\Toggle $component, ?SetupSheet $record) {
+                            $component->state(filled($record?->bearing_carriers));
+                        })
+                        ->afterStateUpdated(function ($state, Set $set) {
+                            if (! $state) {
+                                $set('bearing_carriers', null);
+                            }
+                        }),
+
+                    Forms\Components\TextInput::make('bearing_carriers')
+                        ->label('Bearing carriers value')
+                        ->maxLength(255)
+                        ->nullable()
+                        ->visible(fn (Get $get) => (bool) $get('show_bearing_carriers'))
+                        ->columnSpan(2),
+
+                    // --- Rear width ---
+                    Forms\Components\Toggle::make('show_rear_width')
+                        ->label('Rear width')
+                        ->helperText('Enable field')
+                        ->dehydrated(false)
+                        ->live()
+                        ->afterStateHydrated(function (Forms\Components\Toggle $component, ?SetupSheet $record) {
+                            $component->state($record?->rear_width !== null);
+                        })
+                        ->afterStateUpdated(function ($state, Set $set) {
+                            if (! $state) {
+                                $set('rear_width', null);
+                            }
+                        }),
+
+                    Forms\Components\TextInput::make('rear_width')
+                        ->label('Rear width value')
+                        ->numeric()
+                        ->step(1)
+                        ->minValue(0)
+                        ->maxValue(9999)
+                        ->nullable()
+                        ->visible(fn (Get $get) => (bool) $get('show_rear_width'))
+                        ->columnSpan(2),
+                ]),
+
+
             Forms\Components\Section::make('Tyre pressures')
                 ->columns(2)
                 ->schema([
@@ -230,7 +349,6 @@ class SetupSheetResource extends Resource
                         ]),
                 ]),
 
-            // ✅ Sliders -3..3 (default 0)
             Forms\Components\Section::make('Balance / Handling')
                 ->columns(3)
                 ->schema([
@@ -251,7 +369,6 @@ class SetupSheetResource extends Resource
                     self::ratingField('engine_top', 'Top'),
                 ]),
 
-            // Rezultat + komentari
             Forms\Components\Section::make('Result')
                 ->columns(3)
                 ->schema([
@@ -270,38 +387,24 @@ class SetupSheetResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('date')
-                    ->date()
-                    ->sortable()
-                    ->toggleable(),
+                Tables\Columns\TextColumn::make('date')->date()->sortable()->toggleable(),
+                Tables\Columns\TextColumn::make('race.name')->label('Race / Event')->searchable()->toggleable(),
+                Tables\Columns\TextColumn::make('driver.name')->label('Driver')->searchable()->toggleable(),
+                Tables\Columns\TextColumn::make('time_label')->label('Time / Test')->toggleable(),
+                Tables\Columns\TextColumn::make('lap_time')->label('Lap time')->toggleable(),
+                Tables\Columns\TextColumn::make('fastest_lap')->label('Fastest lap')->toggleable(),
+                Tables\Columns\TextColumn::make('temperature')->label('Temp')->toggleable(),
 
-                Tables\Columns\TextColumn::make('race.name')
-                    ->label('Race / Event')
-                    ->searchable()
-                    ->toggleable(),
+                Tables\Columns\TextColumn::make('wheels')
+                    ->label('Wheels')
+                    ->toggleable(isToggledHiddenByDefault: true),
 
-                Tables\Columns\TextColumn::make('driver.name')
-                    ->label('Driver')
-                    ->searchable()
-                    ->toggleable(),
+                Tables\Columns\TextColumn::make('rear_hubs')->label('Rear hubs')->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('front_hubs')->label('Front hubs')->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('special_axle')->label('Special axle')->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('bearing_carriers')->label('Bearing carriers')->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('rear_width')->label('Rear width')->toggleable(isToggledHiddenByDefault: true),
 
-                Tables\Columns\TextColumn::make('time_label')
-                    ->label('Time / Test')
-                    ->toggleable(),
-
-                Tables\Columns\TextColumn::make('lap_time')
-                    ->label('Lap time')
-                    ->toggleable(),
-
-                Tables\Columns\TextColumn::make('fastest_lap')
-                    ->label('Fastest lap')
-                    ->toggleable(),
-
-                Tables\Columns\TextColumn::make('temperature')
-                    ->label('Temp')
-                    ->toggleable(),
-
-                // ✅ grouped tyre pressures (toggle hidden by default)
                 Tables\Columns\TextColumn::make('pressure_cold_summary')
                     ->label('Pressure (Cold)')
                     ->html()
@@ -324,44 +427,20 @@ class SetupSheetResource extends Resource
                     ))
                     ->toggleable(isToggledHiddenByDefault: true),
 
-                // === Setup detalji – sakriveni po difoltu ===
                 Tables\Columns\TextColumn::make('chassis')->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('engine')->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('sprocket')->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('tyres_type')->label('Tyres')->toggleable(isToggledHiddenByDefault: true),
 
-                // === Meta / audit polja – sakrivena po difoltu ===
-                Tables\Columns\TextColumn::make('createdBy.name')
-                    ->label('Created by')
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-
-                Tables\Columns\TextColumn::make('updatedBy.name')
-                    ->label('Updated by')
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-
-                Tables\Columns\TextColumn::make('created_at')
-                    ->label('Created at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-
-                Tables\Columns\TextColumn::make('updated_at')
-                    ->label('Updated at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('createdBy.name')->label('Created by')->sortable()->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('updatedBy.name')->label('Updated by')->sortable()->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('created_at')->label('Created at')->dateTime()->sortable()->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('updated_at')->label('Updated at')->dateTime()->sortable()->toggleable(isToggledHiddenByDefault: true),
             ])
             ->defaultSort('date', 'desc')
             ->filters([
-                SelectFilter::make('race_id')
-                    ->label('Race')
-                    ->relationship('race', 'name'),
-
-                SelectFilter::make('driver_id')
-                    ->label('Driver')
-                    ->relationship('driver', 'name'),
+                SelectFilter::make('race_id')->label('Race')->relationship('race', 'name'),
+                SelectFilter::make('driver_id')->label('Driver')->relationship('driver', 'name'),
 
                 Filter::make('date_range')
                     ->label('Date range')
